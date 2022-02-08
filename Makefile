@@ -103,14 +103,22 @@ xv6memfs.img: bootblock kernelmemfs
 	dd if=kernelmemfs of=xv6memfs.img seek=1 conv=notrunc
 
 bootblock: bootasm.S bootmain.c
+	# gcc 参数 参考 https://www.runoob.com/w3cnote/gcc-parameter-detail.html
+	# -nostdinc 使编译器不再系统默认的头文件目录里面找头文件, 一般和 -I 联合使用,明确限定头文件的位置。
 	$(CC) $(CFLAGS) -fno-pic -O -nostdinc -I. -c bootmain.c
 	$(CC) $(CFLAGS) -fno-pic -nostdinc -I. -c bootasm.S
+	# ld 参数 参考 https://blog.csdn.net/K346K346/article/details/89088652
+	# -e 使用指定的符号作为程序的初始执行点，由于bootasm.S 中定义了start，所以boot loader 的起始就是bootasm 中的start
+	# -Ttext 使用指定的地址作为文本段的起始点
+	# -o 指定输出文件的名称
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o
 	$(OBJDUMP) -S bootblock.o > bootblock.asm
 	$(OBJCOPY) -S -O binary -j .text bootblock.o bootblock
+	# 在第一扇区末尾加上0x55aa，表示为启动盘
 	./sign.pl bootblock
 
 entryother: entryother.S
+	# -c 只编译并生成目标文件
 	$(CC) $(CFLAGS) -fno-pic -nostdinc -I. -c entryother.S
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0x7000 -o bootblockother.o entryother.o
 	$(OBJCOPY) -S -O binary -j .text bootblockother.o entryother

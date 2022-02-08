@@ -9,6 +9,7 @@
 
 .code16                       # Assemble for 16-bit mode
 .globl start
+# bootloader 起始点
 start:
   cli                         # BIOS enabled interrupts; disable
 
@@ -21,12 +22,12 @@ start:
   # Physical address line A20 is tied to zero so that the first PCs 
   # with 2 MB would run software that assumed 1 MB.  Undo that.
 seta20.1:
-  inb     $0x64,%al               # Wait for not busy
-  testb   $0x2,%al
+  inb     $0x64,%al               # Wait for not busy，从0x64 端口读取一个字节，存储到al中
+  testb   $0x2,%al                # 测试字节，与关系
   jnz     seta20.1
 
   movb    $0xd1,%al               # 0xd1 -> port 0x64
-  outb    %al,$0x64
+  outb    %al,$0x64               # 将al 中的数据(0xdl)写到端口0x64 中
 
 seta20.2:
   inb     $0x64,%al               # Wait for not busy
@@ -62,6 +63,7 @@ start32:
   movw    %ax, %gs                # -> GS
 
   # Set up the stack pointer and call into C.
+  # 调用bootmain.c 中的bootmain 函数
   movl    $start, %esp
   call    bootmain
 
