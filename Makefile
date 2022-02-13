@@ -110,6 +110,9 @@ bootblock: bootasm.S bootmain.c
 	# ld 参数 参考 https://blog.csdn.net/K346K346/article/details/89088652
 	# -e 使用指定的符号作为程序的初始执行点，由于bootasm.S 中定义了start，所以boot loader 的起始就是bootasm 中的start
 	# -Ttext 使用指定的地址作为文本段的起始点
+	# -T 使用 scriptfile 作为链接器脚本。此脚本将替换 ld 的默认链接器脚本（而不是添加到其中），因此脚本必须指定输出文件所需的所有内容。
+	# 	 如果当前目录中不存在脚本文件，ld 会在 -L 选项指定的目录中查找
+	# -b 指定目标代码输入文件的格式
 	# -o 指定输出文件的名称
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o
 	$(OBJDUMP) -S bootblock.o > bootblock.asm
