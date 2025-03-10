@@ -21,6 +21,9 @@ insl(int port, void *addr, int cnt)
 static inline void
 outb(ushort port, uchar data)
 {
+  // 使用x86的 OUT 指令，将数据从AL寄存器传输到指定端口
+  // %0 对应第一个输入操作数（ "a" (data) ），%1 对应第二个输入操作数（ "d" (port) ）
+  // 汇编指令中的参数编号与函数入参无关，只与汇编指令中的操作数顺序有关
   asm volatile("out %0,%1" : : "a" (data), "d" (port));
 }
 

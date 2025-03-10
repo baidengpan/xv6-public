@@ -37,6 +37,7 @@ bootmain(void)
   for(; ph < eph; ph++){
     pa = (uchar*)ph->paddr;
     readseg(pa, ph->filesz, ph->off);
+    // 处理.bss段（内存大小 > 文件大小的情况），填充0
     if(ph->memsz > ph->filesz)
       stosb(pa + ph->filesz, 0, ph->memsz - ph->filesz);
   }
@@ -51,26 +52,30 @@ void
 waitdisk(void)
 {
   // Wait for disk ready.
+  // 状态寄存器：位7(BSY)=1忙碌，位6(DRDY)=1就绪
   while((inb(0x1F7) & 0xC0) != 0x40)
     ;
 }
 
 // Read a single sector at offset into dst.
+// 从磁盘的offset扇区读取512字节到dst内存地址
 void
 readsect(void *dst, uint offset)
 {
   // Issue command.
   waitdisk();
-  outb(0x1F2, 1);   // count = 1
-  outb(0x1F3, offset);
-  outb(0x1F4, offset >> 8);
-  outb(0x1F5, offset >> 16);
-  outb(0x1F6, (offset >> 24) | 0xE0);
-  outb(0x1F7, 0x20);  // cmd 0x20 - read sectors
+  outb(0x1F2, 1);   // count = 1，扇区数=1
+  outb(0x1F3, offset);  // LBA低8位
+  outb(0x1F4, offset >> 8); // LBA中8位
+  outb(0x1F5, offset >> 16);  // LBA高8位
+  outb(0x1F6, (offset >> 24) | 0xE0); // 主设备+LBA最高4位
+  // 命令寄存器：0x20=读扇区，0x30=写扇区
+  outb(0x1F7, 0x20);  // cmd 0x20 - read sectors  ，READ SECTORS命令
 
   // Read data.
   waitdisk();
-  insl(0x1F0, dst, SECTSIZE/4);
+  // 从数据端口读取512字节
+  insl(0x1F0, dst, SECTSIZE/4); // 每次读取4字节，共128次
 }
 
 // Read 'count' bytes at 'offset' from kernel into physical address 'pa'.
@@ -83,9 +88,11 @@ readseg(uchar* pa, uint count, uint offset)
   epa = pa + count;
 
   // Round down to sector boundary.
+  // 程序头中的 ph->paddr 在链接时已按页对齐（通过 kernel.ld 链接脚本保证），因此 offset % SECTSIZE 始终为0
   pa -= offset % SECTSIZE;
 
   // Translate from bytes to sectors; kernel starts at sector 1.
+  // 因为引导扇区是0，读磁盘的时候要跳过引导扇区
   offset = (offset / SECTSIZE) + 1;
 
   // If this is too slow, we could read lots of sectors at a time.
