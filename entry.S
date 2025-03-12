@@ -44,13 +44,16 @@ _start = V2P_WO(entry)
 .globl entry
 entry:
   # Turn on page size extension for 4Mbyte pages
+  # 启用 4Mbyte 页，通过设置CR4寄存器的PSE位（bit 4）启用4MB页模式，一级页表
   movl    %cr4, %eax
   orl     $(CR4_PSE), %eax
   movl    %eax, %cr4
   # Set page directory
+  # 设置页目录，entrypgdir 在 main.c 中定义
   movl    $(V2P_WO(entrypgdir)), %eax
   movl    %eax, %cr3
   # Turn on paging.
+  # 启用分页机制
   movl    %cr0, %eax
   orl     $(CR0_PG|CR0_WP), %eax
   movl    %eax, %cr0
