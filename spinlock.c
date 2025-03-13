@@ -24,7 +24,9 @@ initlock(struct spinlock *lk, char *name)
 void
 acquire(struct spinlock *lk)
 {
+  // 禁用中断，这么做是为了防止死锁。要是在持有锁的时候发生中断，而中断处理程序又尝试获取同一个锁，就会造成死锁。
   pushcli(); // disable interrupts to avoid deadlock.
+  // 检查当前 CPU 是否已经持有这个锁。如果已经持有，就调用 panic() 函数终止程序，因为在持有锁的情况下再次尝试获取锁是错误的操作。
   if(holding(lk))
     panic("acquire");
 
@@ -35,10 +37,13 @@ acquire(struct spinlock *lk)
   // Tell the C compiler and the processor to not move loads or stores
   // past this point, to ensure that the critical section's memory
   // references happen after the lock is acquired.
+  // __sync_synchronize() 是 GCC 编译器提供的一个内置函数，用于创建一个内存屏障，告知 C 编译器和处理器不要将加载或存储操作移动到这个点之后，
+  // 以此保证在获取锁之后才会发生临界区的内存引用。
   __sync_synchronize();
 
   // Record info about lock acquisition for debugging.
   lk->cpu = mycpu();
+  // 调用 getcallerpcs() 函数记录当前的调用栈信息，用于调试。
   getcallerpcs(&lk, lk->pcs);
 }
 

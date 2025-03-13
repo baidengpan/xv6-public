@@ -65,6 +65,8 @@ kfree(char *v)
     panic("kfree");
 
   // Fill with junk to catch dangling refs.
+  // 当把释放的内存填充为 1 之后，若程序中存在悬空引用，那么对该内存的访问就会返回 1 而不是之前存储的数据。
+  // 这样一来，程序的行为就可能会出现异常，从而更容易发现悬空引用的问题。
   memset(v, 1, PGSIZE);
 
   if(kmem.use_lock)

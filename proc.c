@@ -42,6 +42,7 @@ mycpu(void)
   if(readeflags()&FL_IF)
     panic("mycpu called with interrupts enabled\n");
   
+  // 每个物理处理器核心都有一个独一无二的 APIC ID，可以用来在系统里准确无误地识别每个 CPU。
   apicid = lapicid();
   // APIC IDs are not guaranteed to be contiguous. Maybe we should have
   // a reverse map, or reserve a register to store &cpus[i].
