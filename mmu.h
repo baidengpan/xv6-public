@@ -97,6 +97,8 @@ struct segdesc {
 #define PTE_PS          0x080   // Page Size
 
 // Address in page table or page directory entry
+// ~ 是按位取反操作符，它会将操作数的每一位取反。
+// 0xFFF 转换为二进制是 0000 0000 0000 0000 0000 1111 1111 1111 ，取反得到得到 1111 1111 1111 1111 1111 0000 0000 0000 。
 #define PTE_ADDR(pte)   ((uint)(pte) & ~0xFFF)
 #define PTE_FLAGS(pte)  ((uint)(pte) &  0xFFF)
 

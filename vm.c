@@ -32,15 +32,20 @@ seginit(void)
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
+// 返回页目录 pgdir 中对应虚拟地址 va 的页表项（PTE）的指针。如果 alloc 不为 0，当需要的页表页不存在时，会尝试分配新的页表页。
+// pgdir 是一个指向页目录的指针，它本身是一个虚拟地址。
 static pte_t *
 walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
   pte_t *pgtab;
 
-  // 获取页目录项
+  // 获取页目录项，pde存储的是va对应页目录项的虚拟地址
+  // 这里有一点绕，虽然pde存储的是页目录项的虚拟地址，但是页目录项中存储的是页表的物理地址
   pde = &pgdir[PDX(va)];  // PDX提取虚拟地址的高10位
+  // 检查页目录项的存在位（PTE_P）是否被设置。如果设置了，表示对应的页表页已经存在。
   if(*pde & PTE_P){
+    // 页目录项的高20位表示页表的物理地址，pgtab存储的是页表的虚拟地址
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
   } else {
     if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
@@ -50,6 +55,7 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
     // The permissions here are overly generous, but they can
     // be further restricted by the permissions in the page table
     // entries, if necessary.
+    // 将新分配的页表的物理地址存储在页目录项中，并设置该页目录项的存在位、可写位和用户位
     *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
   }
   return &pgtab[PTX(va)];
@@ -72,6 +78,7 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
       return -1;
     if(*pte & PTE_P)
       panic("remap");
+    // 表示物理内存已经分配并且建立了对应的虚拟地址到物理地址的映射
     *pte = pa | perm | PTE_P;
     if(a == last)
       break;
@@ -123,7 +130,7 @@ setupkvm(void)
   pde_t *pgdir;
   struct kmap *k;
 
-  // 分配 4KB 内存作为页目录
+  // 分配 4KB 内存作为页目录，pgdir 是页目录地址（虚拟地址）
   if((pgdir = (pde_t*)kalloc()) == 0)
     return 0;
   // 清空页目录初始化
@@ -131,7 +138,7 @@ setupkvm(void)
   // xv6 物理地址范围：0x0 ~ 0xE000000 (224MB)
   if (P2V(PHYSTOP) > (void*)DEVSPACE)
     panic("PHYSTOP too high");
-  // 遍历kmap数组建立映射
+  // 遍历kmap数组建立映射，为每个映射关系创建页表项
   for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
     // 调用mappages创建页表项
     if(mappages(pgdir, k->virt, k->phys_end - k->phys_start,
@@ -153,6 +160,7 @@ kvmalloc(void)
 
 // Switch h/w page table register to the kernel-only page table,
 // for when no process is running.
+// 将 CPU 的硬件页表寄存器（CR3）切换到内核专用的页表 kpgdir
 void
 switchkvm(void)
 {

@@ -51,7 +51,7 @@ entry:
   # Set page directory
   # 设置页目录，entrypgdir 在 main.c 中定义
   movl    $(V2P_WO(entrypgdir)), %eax
-  movl    %eax, %cr3
+  movl    %eax, %cr3  #cr3 寄存器用于存储页目录的物理地址
   # Turn on paging.
   # 启用分页机制
   movl    %cr0, %eax
