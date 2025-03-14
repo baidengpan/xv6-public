@@ -140,7 +140,7 @@ setupkvm(void)
     panic("PHYSTOP too high");
   // 遍历kmap数组建立映射，为每个映射关系创建页表项
   for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
-    // 调用mappages创建页表项
+    // 调用mappages创建页表项，如果创建失败则释放之前分配的页目录
     if(mappages(pgdir, k->virt, k->phys_end - k->phys_start,
                 (uint)k->phys_start, k->perm) < 0) {
       freevm(pgdir);
