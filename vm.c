@@ -38,7 +38,8 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
   pde_t *pde;
   pte_t *pgtab;
 
-  pde = &pgdir[PDX(va)];
+  // 获取页目录项
+  pde = &pgdir[PDX(va)];  // PDX提取虚拟地址的高10位
   if(*pde & PTE_P){
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
   } else {
@@ -57,6 +58,7 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
+// 在页表中建立虚拟地址到物理地址的映射
 static int
 mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 {
@@ -124,10 +126,14 @@ setupkvm(void)
   // 分配 4KB 内存作为页目录
   if((pgdir = (pde_t*)kalloc()) == 0)
     return 0;
+  // 清空页目录初始化
   memset(pgdir, 0, PGSIZE);
+  // xv6 物理地址范围：0x0 ~ 0xE000000 (224MB)
   if (P2V(PHYSTOP) > (void*)DEVSPACE)
     panic("PHYSTOP too high");
+  // 遍历kmap数组建立映射
   for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
+    // 调用mappages创建页表项
     if(mappages(pgdir, k->virt, k->phys_end - k->phys_start,
                 (uint)k->phys_start, k->perm) < 0) {
       freevm(pgdir);

@@ -22,6 +22,7 @@ main(void)
    * 物理页分配器初始化
    */
   // 初始化物理页分配器， end 是内核加载后的第一个地址， P2V(4*1024*1024) 是将物理地址 4MB 转换为虚拟地址，用于指定物理页分配的起始和结束范围。
+  // 阶段1：释放end到4MB的物理内存
   kinit1(end, P2V(4*1024*1024)); // phys page allocator
 
   /**
@@ -162,6 +163,7 @@ startothers(void)
 // PTE_PS in a page directory entry enables 4Mbyte pages.
 
 __attribute__((__aligned__(PGSIZE)))
+// 高4MB的虚拟内存和高4MB的虚拟内存都映射到低4MB的物理内存。
 pde_t entrypgdir[NPDENTRIES] = {
   // Map VA's [0, 4MB) to PA's [0, 4MB)
   [0] = (0) | PTE_P | PTE_W | PTE_PS,
