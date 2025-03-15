@@ -41,7 +41,7 @@
 #define TCCR    (0x0390/4)   // Timer Current Count
 #define TDCR    (0x03E0/4)   // Timer Divide Configuration
 
-volatile uint *lapic;  // Initialized in mp.c
+volatile uint *lapic;  // Initialized in mp.c，在mpinit()中初始化
 
 //PAGEBREAK!
 static void
@@ -54,7 +54,7 @@ lapicw(int index, int value)
 void
 lapicinit(void)
 {
-  if(!lapic)
+  if(!lapic)  // 依赖mpinit()的初始化
     return;
 
   // Enable local APIC; set spurious interrupt vector.

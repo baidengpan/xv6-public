@@ -5,7 +5,7 @@ struct mp {             // floating pointer
   uchar signature[4];           // "_MP_"
   // MP配置表的物理地址（关键指针）
   void *physaddr;               // phys addr of MP config table
-  // 浮点指针结构长度（单位：16字节）
+  // 浮动指针结构长度（单位：16字节）
   uchar length;                 // 1
   // MP规范版本（1.4版本值为0x04）
   uchar specrev;                // [14]
